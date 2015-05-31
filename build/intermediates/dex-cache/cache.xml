@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/Users/folti/Documents/hue/HueGames/app/libs/huelocalsdk.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="b4834b4f53fe4e244207b99082a1651959f4db31">
+        <dex dex="/Users/folti/Documents/hue/HueGames/app/build/intermediates/pre-dexed/debug/huelocalsdk-0085d70348a254e6c87eca235ef0e284dc471058.jar" />
+    </item>
+    <item
+        jar="/Users/folti/Documents/hue/HueGames/app/libs/huesdkresources.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="a77e9371d8378ee06e42cb3e3e3f04bbdb7714d8">
+        <dex dex="/Users/folti/Documents/hue/HueGames/app/build/intermediates/pre-dexed/debug/huesdkresources-4909f1e252f93ccdc6d48114105b381564bbd88a.jar" />
+    </item>
+
+</items>
