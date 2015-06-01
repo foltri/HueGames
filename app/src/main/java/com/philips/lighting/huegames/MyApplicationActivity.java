@@ -1,5 +1,13 @@
 package com.philips.lighting.huegames;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -8,12 +16,22 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import com.philips.lighting.hue.listener.PHLightListener;
 import com.philips.lighting.hue.sdk.PHHueSDK;
 import com.philips.lighting.model.PHBridge;
@@ -34,6 +52,8 @@ public class MyApplicationActivity extends Activity {
     private static final int MAX_HUE=65535;
     public static final String TAG = "QuickStart";
     private Timer myTimer;
+    ListView listView = null;
+
 
     public final class controlFrame
     {
@@ -86,35 +106,27 @@ public class MyApplicationActivity extends Activity {
         setTitle(R.string.app_name);
         setContentView(R.layout.activity_main);
         phHueSDK = PHHueSDK.create();
-        Button randomButton;
-        randomButton = (Button) findViewById(R.id.buttonRand);
-        randomButton.setOnClickListener(new OnClickListener() {
+        listView = (ListView) findViewById(R.id.listView);
 
-            @Override
-            public void onClick(View v) {
-                randomLights();
-            }
-
-        });
-
-        myTimer = new Timer();
-        myTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                TimerMethod();
-            }
-
-        }, 0, 100);
-
-        rawFrames.add(new controlFrame(1, 25718, 1, 500, 500));
-        rawFrames.add(new controlFrame(1, 64202, 155, 500, 0));
-        rawFrames.add(new controlFrame(2, 25718, 1, 1000, 1000));
-        rawFrames.add(new controlFrame(2, 64202, 155, 1000, 1000));
+        rawFrames.add(new controlFrame(1, 0, 0, 0, 1000));
+        //rawFrames.add(new controlFrame(1, 64202, 155, 5000, 5000));
+        rawFrames.add(new controlFrame(2, 0, 0, 0, 1000));
+        //rawFrames.add(new controlFrame(2, 64202, 155, 1000, 1000));
         rawFrames.add(new controlFrame(3, 25718, 1, 1000, 1000));
         rawFrames.add(new controlFrame(3, 64202, 155, 1000, 1000));
 
-        processRawFrames(rawFrames);
-        int i = 0;
+        populateListView(listView);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+
+                Object o = listView.getItemAtPosition(position);
+
+                startAnimation(o.toString());
+
+
+            }
+        });
 
     }
 
@@ -123,8 +135,10 @@ public class MyApplicationActivity extends Activity {
         //This method is called directly by the timer
         //and runs in the same thread as the timer.
         ArrayList<controlFrame> framesToSend = getNewFrames();
+
+        //debug
         for(controlFrame frame:framesToSend) {
-            Log.w(TAG, "LightToSend: " + frame.getLightIndex());
+            //Log.w(TAG, "LightToSend: " + frame.getLightIndex());
         }
 
         sendFrames(framesToSend);
@@ -145,6 +159,79 @@ public class MyApplicationActivity extends Activity {
         }
     };
 
+    public void startAnimation(String fileName) {
+        File sdCard = Environment.getExternalStorageDirectory();
+        File dir = new File (sdCard.getAbsolutePath() + "/Hue animations/" + fileName);
+        dir.mkdirs();
+
+        FileInputStream inputStream = null;
+        try {
+            inputStream = new FileInputStream(dir);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        ArrayList<controlFrame> tmp = new ArrayList<controlFrame>();
+        try {
+            tmp = readJsonStream(inputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        processRawFrames(tmp);
+
+        if(myTimer != null) myTimer.cancel();
+
+        myTimer = new Timer();
+        myTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                TimerMethod();
+            }
+
+        }, 0, 100);
+    }
+
+    public void populateListView(ListView listView) {
+        File sdCard = Environment.getExternalStorageDirectory();
+        File dir = new File (sdCard.getAbsolutePath() + "/Hue animations");
+        dir.mkdirs();
+
+        File[] filelist = dir.listFiles();
+        String[] theNamesOfFiles = new String[filelist.length];
+        for (int i = 0; i < theNamesOfFiles.length; i++) {
+            theNamesOfFiles[i] = filelist[i].getName();
+        }
+        ArrayAdapter<String> itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, theNamesOfFiles);
+        listView.setAdapter(itemsAdapter);
+    }
+
+    public ArrayList<controlFrame> readJsonStream(InputStream in) throws IOException {
+        JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+        ArrayList<controlFrame> frames = new ArrayList<controlFrame>();
+        try {
+            reader.beginArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Gson gson = new Gson();
+        while (reader.hasNext()) {
+            controlFrame message = gson.fromJson(reader, controlFrame.class);
+            frames.add(message);
+        }
+        try {
+            reader.endArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return frames;
+    }
+
     public void sendFrames(ArrayList<controlFrame> frames) {
         PHBridge bridge = phHueSDK.getSelectedBridge();
         List<PHLight> allLights = bridge.getResourceCache().getAllLights(); //TODO - Lights are not in order
@@ -162,40 +249,23 @@ public class MyApplicationActivity extends Activity {
                 lightState.setTransitionTime(frame.getTransitionTime()/100);
                 // To validate your lightstate is valid (before sending to the bridge) you can use:
                 // String validState = lightState.validateState();
-                //bridge.updateLightState(allLights.get(i), lightState, listener);
                 //  bridge.updateLightState(light, lightState);   // If no bridge response is required then use this simpler form.
-                bridge.updateLightState(allLights.get(frame.getLightIndex()-1), lightState);
-                //Log.w(TAG,"light " + i + "color " + String.valueOf(lightState.getHue()) + " trans " + String.valueOf(lightState.getTransitionTime()));
-                Log.w(TAG, "Sent: " + frame.getLightIndex());
+                bridge.updateLightState(allLights.get(frame.getLightIndex()-1), lightState, listener);
+
+                //debug
+                //Log.w(TAG, "Sent: " + frame.getLightIndex());
             }
         }
 
-       /* for (int i = 0; i < allLights.size(); i++) {
-            PHLightState lightState = new PHLightState();
-
-            //Only send frames if there is frame to send
-            if (i < frames.size()) {
-                if (frames.get(i).getHue() != 0) {
-                    lightState.setHue(frames.get(i).getHue());
-                }
-                if (frames.get(i).getBri() != 0) {
-                    lightState.setBrightness(frames.get(i).getBri());
-                }
-                lightState.setTransitionTime(frames.get(i).getTransitionTime()/100);
-                // To validate your lightstate is valid (before sending to the bridge) you can use:
-                // String validState = lightState.validateState();
-                //bridge.updateLightState(allLights.get(i), lightState, listener);
-                //  bridge.updateLightState(light, lightState);   // If no bridge response is required then use this simpler form.
-                bridge.updateLightState(allLights.get(i), lightState);
-                //Log.w(TAG,"light " + i + "color " + String.valueOf(lightState.getHue()) + " trans " + String.valueOf(lightState.getTransitionTime()));
-                Log.w(TAG, "Sent: " + i+1);
-            }
-        }*/
     }
 
     public void processRawFrames(ArrayList<controlFrame> rawFrames) {
 
         int numberOfLights = getNumberOfLights(rawFrames);
+        allFrames.clear();
+        newFrameStartTime.clear();
+        timerState.clear();
+        nextFrameIndex.clear();
 
         //intitialise allFrames and timer arrays
         for (int i = 0;i < numberOfLights; i++) {
@@ -225,9 +295,13 @@ public class MyApplicationActivity extends Activity {
        int lightIndex = 0;
         for(ArrayList<controlFrame> frame:allFrames) {
             if(timerState.get(lightIndex) == newFrameStartTime.get(lightIndex)) {
-                framesToSend.add(frame.get(nextFrameIndex.get(lightIndex)));
 
-                refreshTimerData(lightIndex, frame.get(nextFrameIndex.get(lightIndex)));
+                if(frame.size() != 0) {
+                    framesToSend.add(frame.get(nextFrameIndex.get(lightIndex)));
+                    refreshTimerData(lightIndex, frame.get(nextFrameIndex.get(lightIndex)));
+                }
+
+
             }
             //Increment timerState
             timerState.set(lightIndex, timerState.get(lightIndex) + 1);
@@ -252,23 +326,6 @@ public class MyApplicationActivity extends Activity {
         }
     }
 
-    public void randomLights() {
-        PHBridge bridge = phHueSDK.getSelectedBridge();
-
-        List<PHLight> allLights = bridge.getResourceCache().getAllLights();
-        Random rand = new Random();
-
-        for (PHLight light : allLights) {
-            PHLightState lightState = new PHLightState();
-            lightState.setHue(rand.nextInt(MAX_HUE));
-
-
-            // To validate your lightstate is valid (before sending to the bridge) you can use:  
-            // String validState = lightState.validateState();
-            bridge.updateLightState(light, lightState, listener);
-            //  bridge.updateLightState(light, lightState);   // If no bridge response is required then use this simpler form.
-        }
-    }
     // If you want to handle the response from the bridge, create a PHLightListener object.
     PHLightListener listener = new PHLightListener() {
         
@@ -279,7 +336,7 @@ public class MyApplicationActivity extends Activity {
         
         @Override
         public void onStateUpdate(Map<String, String> arg0, List<PHHueError> arg1) {
-           Log.w(TAG, "Light has updated");
+           //Log.w(TAG, "Light has updated");
         }
         
         @Override
@@ -309,5 +366,30 @@ public class MyApplicationActivity extends Activity {
             phHueSDK.disconnect(bridge);
             super.onDestroy();
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_myapplicationactivity, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.refresh_list) {
+            populateListView(listView);
+            if(myTimer != null) {
+                myTimer.cancel();
+            }
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

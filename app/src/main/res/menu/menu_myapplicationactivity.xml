@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MyApplicationActivity">
+    <item android:id="@+id/refresh_list"
+        android:title="Refresh"
+        android:showAsAction="always"
+        />
+
+</menu>

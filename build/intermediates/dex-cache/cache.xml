@@ -2,6 +2,13 @@
 <items version="2" >
 
     <item
+        jar="/Users/folti/Documents/hue/HueGames/app/libs/gson-2.3.1.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="ecb6e1f8e4b0e84c4b886c2f14a1500caf309757">
+        <dex dex="/Users/folti/Documents/hue/HueGames/app/build/intermediates/pre-dexed/debug/gson-2.3.1-c5c9c74eaf019d8dd2488998177cb9f07e52db6f.jar" />
+    </item>
+    <item
         jar="/Users/folti/Documents/hue/HueGames/app/libs/huelocalsdk.jar"
         jumboMode="false"
         revision="22.0.1"

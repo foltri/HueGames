@@ -69,3 +69,7 @@ ADDED from AndroidManifest.xml:34:6
 		ADDED from AndroidManifest.xml:36:11
 	android:name
 		ADDED from AndroidManifest.xml:35:11
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from AndroidManifest.xml:40:5
+	android:name
+		ADDED from AndroidManifest.xml:40:22

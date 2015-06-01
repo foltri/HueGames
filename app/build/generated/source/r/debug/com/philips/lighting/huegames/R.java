@@ -23,17 +23,18 @@ public final class R {
     public static final class id {
         public static final int LinearLayout1=0x7f080005;
         public static final int bridge_ip=0x7f08000a;
-        public static final int bridge_list=0x7f080003;
+        public static final int bridge_list=0x7f080002;
         public static final int bridge_mac=0x7f080009;
-        public static final int buttonRand=0x7f080001;
         public static final int countdownPB=0x7f080008;
         public static final int descriptionTextview=0x7f080006;
         public static final int empty_list_view=0x7f080004;
         public static final int find_new_bridge=0x7f08000c;
         public static final int imageView1=0x7f080007;
-        public static final int linear1=0x7f080002;
+        public static final int linear1=0x7f080001;
+        public static final int listView=0x7f080000;
         public static final int refresh=0x7f08000b;
-        public static final int textView1=0x7f080000;
+        public static final int refresh_list=0x7f08000d;
+        public static final int textView1=0x7f080003;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
@@ -41,10 +42,12 @@ public final class R {
         public static final int home=0x7f030002;
         public static final int pushlink=0x7f030003;
         public static final int selectbridge_item=0x7f030004;
+        public static final int simple_list_item_1=0x7f030005;
     }
     public static final class menu {
         public static final int bridgelist=0x7f070000;
         public static final int home=0x7f070001;
+        public static final int menu_myapplicationactivity=0x7f070002;
     }
     public static final class string {
         public static final int action_settings=0x7f060000;
